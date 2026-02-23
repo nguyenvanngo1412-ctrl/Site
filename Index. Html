@@ -1,0 +1,288 @@
+Dự án web hoàn chỉnh: truyentranhgay 18+ (Fullstack Demo)
+
+> Stack đề xuất: NodeJS + Express + MongoDB + Frontend hiện đại (Dark UI, Mobile friendly)
+Không quảng cáo – tốc độ cao – dễ mở rộng
+
+
+
+
+---
+
+1. Chức năng chính
+
+Người dùng
+
+Đăng ký / Đăng nhập
+
+Hồ sơ cá nhân
+
+Lưu truyện yêu thích
+
+Bình luận
+
+
+Tác giả
+
+Trang quản lý tác phẩm
+
+Upload truyện chữ
+
+Upload truyện tranh
+
+Upload ảnh
+
+Quản lý chương
+
+
+Hệ thống
+
+Phân loại rõ: Truyện chữ / Truyện tranh / Ảnh
+
+Lọc: Thể loại, Quốc gia, Ngôn ngữ, Có dịch / Không dịch
+
+Trang đọc truyện chuyên nghiệp
+
+Dark Mode
+
+Mobile UI mượt
+
+
+
+---
+
+2. Cấu trúc project
+
+truyentranhgay/
+│
+├── backend/
+│   ├── server.js
+│   ├── config/db.js
+│   ├── models/
+│   │     ├── User.js
+│   │     ├── Story.js
+│   │     ├── Chapter.js
+│   │     └── Comment.js
+│   ├── routes/
+│   │     ├── auth.js
+│   │     ├── story.js
+│   │     └── comment.js
+│   └── uploads/
+│
+└── frontend/
+    ├── index.html
+    ├── reader.html
+    ├── dashboard.html
+    ├── login.html
+    ├── register.html
+    ├── css/style.css
+    └── js/app.js
+
+
+---
+
+3. Backend – NodeJS + MongoDB
+
+server.js
+
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const multer = require('multer');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+mongoose.connect('mongodb://127.0.0.1:27017/truyentranhgay');
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/story', require('./routes/story'));
+app.use('/api/comment', require('./routes/comment'));
+
+app.listen(3000, () => console.log('Server chạy tại http://localhost:3000'));
+
+
+---
+
+models/User.js
+
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+  username: String,
+  email: String,
+  password: String,
+  role: { type: String, default: 'user' }
+});
+
+module.exports = mongoose.model('User', UserSchema);
+
+
+---
+
+models/Story.js
+
+const mongoose = require('mongoose');
+
+const StorySchema = new mongoose.Schema({
+  title: String,
+  author: String,
+  type: String, // text, comic, image
+  genre: [String],
+  language: String,
+  country: String,
+  translated: Boolean,
+  description: String,
+  cover: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Story', StorySchema);
+
+
+---
+
+routes/auth.js
+
+const router = require('express').Router();
+const User = require('../models/User');
+bcrypt = require('bcryptjs');
+
+router.post('/register', async (req,res)=>{
+  const hash = await bcrypt.hash(req.body.password,10);
+  const user = new User({...req.body, password:hash});
+  await user.save();
+  res.json({success:true});
+});
+
+router.post('/login', async (req,res)=>{
+  const user = await User.findOne({email:req.body.email});
+  if(!user) return res.json({success:false});
+  const ok = await bcrypt.compare(req.body.password,user.password);
+  if(!ok) return res.json({success:false});
+  res.json({success:true,user});
+});
+
+module.exports = router;
+
+
+---
+
+4. Frontend – Dark UI + Mobile Friendly
+
+frontend/index.html
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>truyentranhgay 18+</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark">
+<header>
+  <h1>truyentranhgay 18+</h1>
+  <nav>
+    <a href="login.html">Đăng nhập</a>
+    <a href="register.html">Đăng ký</a>
+  </nav>
+</header>
+
+<section id="story-list"></section>
+
+<script src="js/app.js"></script>
+</body>
+</html>
+
+
+---
+
+frontend/css/style.css
+
+body.dark{
+  background:#0b0f14;
+  color:#e6f0ff;
+  font-family:system-ui;
+  margin:0
+}
+header{
+  padding:15px;
+  background:#121826;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+a{color:#6dd3ff;text-decoration:none;margin:0 10px}
+#story-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:12px}
+.card{background:#121826;padding:10px;border-radius:12px}
+
+
+---
+
+frontend/js/app.js
+
+fetch('http://localhost:3000/api/story')
+  .then(r=>r.json())
+  .then(data=>{
+    const list = document.getElementById('story-list');
+    data.forEach(s=>{
+      list.innerHTML += `
+        <div class="card">
+          <h4>${s.title}</h4>
+          <p>${s.type} • ${s.language}</p>
+        </div>`;
+    })
+  })
+
+
+---
+
+5. Trang đọc truyện chuyên nghiệp
+
+Tính năng:
+
+Scroll mượt
+
+Phóng to ảnh
+
+Đọc nền tối
+
+Tự lưu chương đang đọc
+
+Bình luận realtime
+
+
+
+---
+
+6. Hướng dẫn chạy web
+
+npm init -y
+npm install express mongoose cors multer bcryptjs
+node server.js
+
+Mở frontend bằng Live Server hoặc http-server
+
+
+---
+
+7. Có thể nâng cấp thêm
+
+App Android / iOS
+
+Hệ thống donate cho tác giả
+
+Cloud upload (Firebase / Cloudinary)
+
+AI gợi ý truyện
+
+
+
+---
+
+Nếu bạn muốn, mình có thể làm tiếp:
+
+1️⃣ Full source code backend + frontend hoàn chỉnh 2️⃣ Hệ thống upload ảnh + truyện tranh 3️⃣ Hệ thống tài khoản tác giả riêng 4️⃣ App Android đọc truyện
+
+👉 Bạn muốn đi theo hướng Web + App + Server đầy đủ không?
